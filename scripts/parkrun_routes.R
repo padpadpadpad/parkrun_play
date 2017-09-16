@@ -119,7 +119,7 @@ ggplot(filter(d_parkrun, total_elevation_gain < 195)) +
   geom_vline(aes(xintercept = filter(d_parkrun, parkrun == 'Trelissick')$total_elevation_gain), linetype = 2) +
   xlab('total elevation gain (m)')
 
-leaflet_df <- select(d_parkrun, parkrun, start_latitude, start_longitude) %>%
+leaflet_df <- select(d_parkrun, parkrun, start_latitude, start_longitude, total_elevation_gain) %>%
   rename(lat = start_latitude, lng = start_longitude) %>%
   mutate_at(., c('lat', 'lng'), as.numeric)
 
