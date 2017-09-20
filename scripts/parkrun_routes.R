@@ -125,10 +125,3 @@ leaflet_df <- select(d_parkrun, parkrun, start_latitude, start_longitude, total_
 
 saveRDS(leaflet_df, '~/Desktop/park_runs/leaflet_df.rds')
 saveRDS(lat_lon, '~/Desktop/park_runs/latlon_df.rds')
-
-
-m = leaflet(leaflet_df) %>%
-  addTiles() %>%
-  setView(lat = 54.14, lng = -1.68, zoom = 4) %>%
-  fitBounds(-14, 50, 6, 59) %>%
-  addMarkers(., lng = ~lng, lat = ~ lat, popup = ~parkrun)
