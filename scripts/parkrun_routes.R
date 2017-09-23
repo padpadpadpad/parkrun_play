@@ -123,5 +123,5 @@ leaflet_df <- select(d_parkrun, parkrun, start_latitude, start_longitude, total_
   rename(lat = start_latitude, lng = start_longitude) %>%
   mutate_at(., c('lat', 'lng'), as.numeric)
 
-saveRDS(leaflet_df, '~/Desktop/park_runs/leaflet_df.rds')
-saveRDS(lat_lon, '~/Desktop/park_runs/latlon_df.rds')
+saveRDS(leaflet_df, '~/Desktop/park_runs/data/leaflet_df.rds')
+saveRDS(lat_lon, '~/Desktop/park_runs/data/latlon_df.rds')

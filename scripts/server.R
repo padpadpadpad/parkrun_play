@@ -30,20 +30,36 @@ server <- function(input, output){
   })
   
   lat_lon_df <- reactive({
-    if(is.null(clicked_data$clickedMarker)){lat_lon[lat_lon$parkrun == 'Aberdeen',]}
+    if(is.null(clicked_data$clickedMarker)){lat_lon[lat_lon$parkrun == 'Trelissick',]}
       else{lat_lon[lat_lon$parkrun == clicked_data$clickedMarker$id,]}
     })
   
-  # make a plot depending on the selected point
-  output$plot <- renderPlot({
+  clicked_df <- reactive({
+    if(is.null(clicked_data$clickedMarker)){leaflet_df[leaflet_df$parkrun == 'Trelissick',]}
+    else{leaflet_df[leaflet_df$parkrun == clicked_data$clickedMarker$id,]}
+  })
+  
+  # make a plot for the elevation profile depending on the selected point
+  output$elev_plot <- renderPlot({
     p <- lat_lon_df()
     plot <- ggplot(p) +
-      geom_ribbon(aes(ymin = min(p$elevation) - 0.5, ymax = elevation, x = distance)) +
+      geom_ribbon(aes(ymin = min(p$elevation) - 0.5, ymax = elevation, x = distance), fill = 'darkgreen') +
       xlab('Distance (km)') +
       ylab('Elevation (m)') +
       theme_bw() +
-      ylim(min(p$elevation) - 0.5, min(p$elevation) + 250) +
+      ylim(min(p$elevation) - 1, min(p$elevation) + 125) +
       ggtitle(paste(gsub('_', ' ', p$parkrun), 'parkrun', sep = ' '))
+    print(plot)
+  })
+  
+  # make a plot for the distribution of total elevation gain
+  output$elev_dist <- renderPlot({
+    p <- leaflet_df
+    plot <- ggplot(leaflet_df) +
+      geom_histogram(aes(total_elevation_gain), bins = 20, fill = 'palegreen4') +
+      theme_bw() +
+      geom_vline(aes(xintercept = clicked_df()$total_elevation_gain), linetype = 2, size = 1.5) +
+      xlab('total elevation gain (m)')
     print(plot)
   })
   
