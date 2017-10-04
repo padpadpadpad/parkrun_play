@@ -31,22 +31,6 @@ segment <- get_segment(my_token, id = id)
 segments <- read.csv("~/Desktop/park_runs/raw/park_run_segmentIDs.csv", stringsAsFactors = FALSE) %>%
   filter(., !is.na(segment_id) & !is.na(Parkrun))
 
-compile_segment <- function(x, columns, stoken){
-  temp <- rStrava::get_segment(stoken, id = x)
-  temp <- data.frame(unlist(temp), stringsAsFactors = F)
-  temp$ColNames <- rownames(temp)
-  temp <- tidyr::spread(temp, ColNames, unlist.temp.)
-  return(temp)
-}
-
-get_LatLon <- function(x, .id_col){
-  if('map.summary_polyline' %in% names(x)){y <- decode_Polyline(x$map.summary_polyline)}
-  if('map.polyline' %in% names(x)){y <- decode_Polyline(x$map.polyline)}
-  
-  y[,.id_col] <- unique(x[,.id_col])
-  return(y)
-}
-
 get_all_LatLon <- function (id_col, parent_data){
   id_col_fac <- as.factor(parent_data[, id_col])
   temp <- split(parent_data, id_col_fac)
@@ -57,25 +41,23 @@ get_all_LatLon <- function (id_col, parent_data){
   return(dat)
 }
 
-get_dists <- function(dat_in, lon = 'lon', lat = 'lat', split_col = 'activity'){
+get_dists <- function(dat_in, lon = 'lon', lat = 'lat'){
   
-  dat <- dat_in[,c(split_col, lon, lat)]
-  names(dat) <- c('activity', 'lon', 'lat')
+  dat <- dat_in[,c(lon, lat)]
+  names(dat) <- c('lon', 'lat')
   
   # distances by activity
-  out <- split(dat, dat$activity)
-  out <- lapply(out, function(x){
-    
-    x <- x[, c('lon', 'lat')]
-    x <- sapply(2:nrow(x), function(y){geosphere::distm(x[y-1,], x[y,])/1000})
-    
-    return(c(0, cumsum(x)))
-    
-  })
-  
-  out <- as.numeric(unlist(out))
+  out <- sapply(2:nrow(dat), function(y){geosphere::distm(dat[y-1,], dat[y,])/1000})
+  out <- 	c(0, cumsum(out))
   return(out)
-  
+}
+
+compile_segment <- function(x, columns, stoken){
+  temp <- rStrava::get_segment(stoken, id = x)
+  temp <- data.frame(unlist(temp), stringsAsFactors = F)
+  temp$ColNames <- rownames(temp)
+  temp <- tidyr::spread(temp, ColNames, unlist.temp.)
+  return(temp)
 }
 
 d_parkrun <- segments$segment_id %>% purrr::map_df(., .f = compile_segment, stoken = my_token) %>%
@@ -84,11 +66,15 @@ d_parkrun <- segments$segment_id %>% purrr::map_df(., .f = compile_segment, stok
 # make some columns numeric
 d_parkrun <- mutate_at(d_parkrun, c('total_elevation_gain'), as.numeric)
 
+test <- filter(d_parkrun, parkrun %in% unique(d_parkrun$parkrun)[1:3])
+
 # get lat lon, distance and elevation of many runs ####
-lat_lon <- get_all_LatLon(id_col = 'parkrun', parent_data = d_parkrun) %>%
-  mutate(distance = get_dists(., split_col = 'parkrun'),
-         elevation = rgbif::elevation(latitude = lat, longitude = lon, key = GoogleApi)[,'elevation']) %>%
+lat_lon <- get_all_LatLon(id_col = 'parkrun', parent_data = test) %>%
   group_by(parkrun) %>%
+  do(., data.frame(distance = get_dists(dat_in = .),
+                   elevation = rgbif::elevation(latitude = .$lat, longitude = .$lon, key = GoogleApi)[,'elevation'],
+                   lat = .$lat,
+                   lon = .$lon)) %>%
   # normalise elevation to make them plottable
   mutate(., ele_norm = elevation - min(elevation) + 1) %>%
   ungroup()
